@@ -17,8 +17,8 @@ public class ClassPathBeanDefinitionScanner extends ClassPathScanningCandidateCo
 
     public void doScan(String... basePackages){
         for(String basePackage : basePackages){
-            Set<BeanDefinition> candicates = findCandidateComponent(basePackage);
-            for(BeanDefinition beanDefinition : candicates){
+            Set<BeanDefinition> candidates = findCandidateComponent(basePackage);
+            for(BeanDefinition beanDefinition : candidates){
                 String beanScope = resolveBeanScope(beanDefinition);
                 if(StrUtil.isNotEmpty(beanScope)) {
                     beanDefinition.setScope(beanScope);

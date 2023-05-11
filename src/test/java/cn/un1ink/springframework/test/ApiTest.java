@@ -11,6 +11,8 @@ import cn.un1ink.springframework.aop.framework.JdkDynamicAopProxy;
 import cn.un1ink.springframework.aop.framework.ProxyFactory;
 import cn.un1ink.springframework.aop.framework.ReflectiveMethodInvocation;
 import cn.un1ink.springframework.aop.framework.adapter.MethodBeforeAdviceInterceptor;
+import cn.un1ink.springframework.beans.BeansException;
+import cn.un1ink.springframework.beans.factory.config.BeanPostProcessor;
 import cn.un1ink.springframework.context.support.ClassPathXmlApplicationContext;
 import cn.un1ink.springframework.test.bean.IUserService;
 import cn.un1ink.springframework.test.bean.UserService;
@@ -25,6 +27,8 @@ import org.junit.Test;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @description:
@@ -34,123 +38,41 @@ import java.lang.reflect.Proxy;
 
 public class ApiTest {
 
-    private AdvisedSupport advisedSupport;
-
-    @Before
-    public void init() {
-        // 目标对象
-        IUserService userService = new UserService();
-        // 组装代理信息
-        advisedSupport = new AdvisedSupport();
-        advisedSupport.setTargetSource(new TargetSource(userService));
-        advisedSupport.setMethodInterceptor(new UserServiceInterceptor());
-        advisedSupport.setMethodMatcher(new AspectJExpressionPointcut("execution(* cn.un1ink.springframework.test.bean.IUserService.*(..))"));
-    }
-
     @Test
-    public void test_proxyFactory() {
-        advisedSupport.setProxyTargetClass(false); // false/true，JDK动态代理、CGlib动态代理
-        IUserService proxy = (IUserService) new ProxyFactory(advisedSupport).getProxy();
-
-        System.out.println("测试结果：" + proxy.queryUserInfo());
-    }
-
-    @Test
-    public void test_beforeAdvice() {
-        UserServiceBeforeAdvice beforeAdvice = new UserServiceBeforeAdvice();
-        MethodBeforeAdviceInterceptor interceptor = new MethodBeforeAdviceInterceptor(beforeAdvice);
-        advisedSupport.setMethodInterceptor(interceptor);
-
-        IUserService proxy = (IUserService) new ProxyFactory(advisedSupport).getProxy();
-        System.out.println("测试结果：" + proxy.queryUserInfo());
-    }
-
-    @Test
-    public void test_advisor() {
-        // 目标对象
-        IUserService userService = new UserService();
-
-        AspectJExpressionPointcutAdvisor advisor = new AspectJExpressionPointcutAdvisor();
-        advisor.setExpression("execution(* cn.un1ink.springframework.test.bean.IUserService.*(..))");
-        advisor.setAdvice(new MethodBeforeAdviceInterceptor(new UserServiceBeforeAdvice()));
-
-        ClassFilter classFilter = advisor.getPointcut().getClassFilter();
-        if (classFilter.matches(userService.getClass())) {
-            AdvisedSupport advisedSupport = new AdvisedSupport();
-
-            TargetSource targetSource = new TargetSource(userService);
-            advisedSupport.setTargetSource(targetSource);
-            advisedSupport.setMethodInterceptor((MethodInterceptor) advisor.getAdvice());
-            advisedSupport.setMethodMatcher(advisor.getPointcut().getMethodMatcher());
-            advisedSupport.setProxyTargetClass(true); // false/true，JDK动态代理、CGlib动态代理
-
-            IUserService proxy = (IUserService) new ProxyFactory(advisedSupport).getProxy();
-            System.out.println("测试结果：" + proxy.queryUserInfo());
-        }
-    }
-
-    @Test
-    public void test_aop() {
-        ClassPathXmlApplicationContext applicationContext = new ClassPathXmlApplicationContext("classpath:spring.xml");
-
+    public void test_scan() {
+        ClassPathXmlApplicationContext applicationContext = new ClassPathXmlApplicationContext("classpath:spring-scan.xml");
         IUserService userService = applicationContext.getBean("userService", IUserService.class);
         System.out.println("测试结果：" + userService.queryUserInfo());
     }
 
     @Test
-    public void test() {
-        Enhancer enhancer = new Enhancer();
-        Class<MethodBeforeAdviceInterceptor> methodBeforeAdviceInterceptorClass = MethodBeforeAdviceInterceptor.class;
-
-        enhancer.setSuperclass(methodBeforeAdviceInterceptorClass);
-
-        enhancer.setCallback(new NoOp() {
-            @Override
-            public int hashCode() {
-                return super.hashCode();
-            }
-        });
-        enhancer.create();
-
-
-
+    public void test_property() {
+        ClassPathXmlApplicationContext applicationContext = new ClassPathXmlApplicationContext("classpath:spring-property.xml");
+        IUserService userService = applicationContext.getBean("userService", IUserService.class);
+        System.out.println("测试结果：" + userService);
     }
 
     @Test
-    public void test_proxy_method() {
-        // 目标对象(可以替换成任何的目标对象)
-        Object targetObj = new UserService();
+    public void test_beanPost(){
 
-        // AOP 代理
-        IUserService proxy = (IUserService) Proxy.newProxyInstance(Thread.currentThread().getContextClassLoader(), targetObj.getClass().getInterfaces(), new InvocationHandler() {
-            // 方法匹配器
-            MethodMatcher methodMatcher = new AspectJExpressionPointcut("execution(* cn.un1ink.springframework.test.bean.IUserService.*(..))");
+        BeanPostProcessor beanPostProcessor = new BeanPostProcessor() {
+            @Override
+            public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+                return null;
+            }
 
             @Override
-            public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-                if (methodMatcher.matches(method, targetObj.getClass())) {
-                    // 方法拦截器
-                    MethodInterceptor methodInterceptor = invocation -> {
-                        long start = System.currentTimeMillis();
-                        try {
-                            return invocation.proceed();
-                        } finally {
-                            System.out.println("监控 - Begin By AOP");
-                            System.out.println("方法名称：" + invocation.getMethod().getName());
-                            System.out.println("方法耗时：" + (System.currentTimeMillis() - start) + "ms");
-                            System.out.println("监控 - End\r\n");
-                        }
-                    };
-                    // 反射调用
-                    return methodInterceptor.invoke(new ReflectiveMethodInvocation(targetObj, method, args));
-                }
-                return method.invoke(targetObj, args);
+            public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+                return null;
             }
-        });
+        };
 
-        String result = proxy.queryUserInfo();
-        System.out.println("测试结果：" + result);
+        List<BeanPostProcessor> beanPostProcessors = new ArrayList<BeanPostProcessor>();
+        beanPostProcessors.add(beanPostProcessor);
+        beanPostProcessors.add(beanPostProcessor);
+        beanPostProcessors.remove(beanPostProcessor);
 
+        System.out.println(beanPostProcessors.size());
     }
 
 }
