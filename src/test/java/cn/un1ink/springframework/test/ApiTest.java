@@ -36,7 +36,7 @@ public class ApiTest {
 
     private AdvisedSupport advisedSupport;
 
-//    @Before
+    @Before
     public void init() {
         // 目标对象
         IUserService userService = new UserService();
@@ -47,7 +47,7 @@ public class ApiTest {
         advisedSupport.setMethodMatcher(new AspectJExpressionPointcut("execution(* cn.un1ink.springframework.test.bean.IUserService.*(..))"));
     }
 
-//    @Test
+    @Test
     public void test_proxyFactory() {
         advisedSupport.setProxyTargetClass(false); // false/true，JDK动态代理、CGlib动态代理
         IUserService proxy = (IUserService) new ProxyFactory(advisedSupport).getProxy();
@@ -55,7 +55,7 @@ public class ApiTest {
         System.out.println("测试结果：" + proxy.queryUserInfo());
     }
 
-//    @Test
+    @Test
     public void test_beforeAdvice() {
         UserServiceBeforeAdvice beforeAdvice = new UserServiceBeforeAdvice();
         MethodBeforeAdviceInterceptor interceptor = new MethodBeforeAdviceInterceptor(beforeAdvice);
@@ -65,7 +65,7 @@ public class ApiTest {
         System.out.println("测试结果：" + proxy.queryUserInfo());
     }
 
-//    @Test
+    @Test
     public void test_advisor() {
         // 目标对象
         IUserService userService = new UserService();
@@ -97,7 +97,7 @@ public class ApiTest {
         System.out.println("测试结果：" + userService.queryUserInfo());
     }
 
-//    @Test
+    @Test
     public void test() {
         Enhancer enhancer = new Enhancer();
         Class<MethodBeforeAdviceInterceptor> methodBeforeAdviceInterceptorClass = MethodBeforeAdviceInterceptor.class;
@@ -116,7 +116,7 @@ public class ApiTest {
 
     }
 
-//    @Test
+    @Test
     public void test_proxy_method() {
         // 目标对象(可以替换成任何的目标对象)
         Object targetObj = new UserService();
